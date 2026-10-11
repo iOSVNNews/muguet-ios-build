@@ -1,25 +1,24 @@
-# Muguet private iOS build
+# Muguet iOS Builds
 
-This repository contains build orchestration only. The source wrapper is
-checked out from the public `iOSVNNews/muguet` fork at an explicit revision.
-Game inputs and compiled IPA outputs are not committed to this repository.
+Precompiled release artifacts and CI orchestration for the [Muguet (iOSVN Rebuild)](https://github.com/iOSVNNews/muguet) project.
 
-Run **Build Muguet IPA with game code** manually. The private artifact contains
-the arm64 IPA and its SHA-256 checksum. The build checks the original WASM hash,
-precompiles it for iOS, and verifies the resulting `__GAME` executable segment.
+---
 
-The original 63,201,802-byte WASM input is downloaded in validated HTTP ranges
-to avoid the mirror's interrupted large responses. Its required SHA-256 is
-`11ca8d2c04c5e843d18ff4aea4899d72c86973c6b031df334e67c446b2ae83e0`.
+## Downloads
 
-Game data and shaders are separate inputs. Import a compatible `game.zip`
-containing `data/manifest.json` and `b/<build>/shaders/index.json` after installing
-the application. No on-device execution or gameplay result is claimed by this
-build job.
+Latest release binaries (ARM64 Mach-O IPA) are available under [Releases](https://github.com/iOSVNNews/muguet-ios-build/releases):
+- **Build 8**: [Muguet-v8.ipa](https://github.com/iOSVNNews/muguet-ios-build/releases/download/iosvn-runtime8-20261012/Muguet-v8.ipa) (SHA-256: `934ecd80da3d677d01982763be89594d75c4e53570dd8f635a48b2f58fb7875d`)
 
-The private macOS job was blocked by the account's Actions billing limits on
-2026-10-11. The active build uses the public fork's
-`Build encrypted Muguet IPA with game code` workflow instead. That workflow
-uploads only an AES-256-GCM encrypted output bundle, and excludes iOS objects,
-raw WASM, and precompiled game data from caches and uploads. The decryption key
-is saved under the ignored `.local-keys/` directory on the owner's machine.
+For source code, technical documentation, and setup instructions, refer to the main repository: [iOSVNNews/muguet](https://github.com/iOSVNNews/muguet).
+
+---
+
+## Build Pipeline Overview
+
+The CI pipeline compiles the source wrapper from `iOSVNNews/muguet`, verifies the WebAssembly module hash, and ahead-of-time (AOT) compiles it into an ARM64 Mach-O binary (`__GAME` segment).
+
+- **Target Architecture**: `aarch64-apple-ios`
+- **Compiler**: Rust 1.98.1 + Xcode 26+ (`xcodegen`)
+- **Required WASM input hash**: `11ca8d2c04c5e843d18ff4aea4899d72c86973c6b031df334e67c446b2ae83e0`
+
+Game data and shaders (`game.zip` containing `data/manifest.json` and `b/<build>/shaders/index.json`) are imported separately by the user on-device.
