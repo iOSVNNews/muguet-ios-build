@@ -1,0 +1,136 @@
+name: Build Muguet IPA with game code
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: muguet-game-ipa
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_TERM_COLOR: never
+      RAYON_NUM_THREADS: "2"
+      MUGUET_IOS_HEAP_GB: "5"
+      BUNDLE_ID: vn.iosvn.muguet
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ci
+
+      - name: Check out Muguet source
+        uses: actions/checkout@v4
+        with:
+          repository: iOSVNNews/muguet
+          ref: 0d43ef30746dc8c5076a6d509635b515f185bb40
+          path: source
+
+      - name: Set up Xcode and Rust
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup toolchain install 1.98.1 --profile minimal --target aarch64-apple-ios
+          rustup default 1.98.1
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          df -h .
+
+      - name: Restore Rust build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            source/target/release
+            source/target/ios
+          key: muguet-game-ios-rust1981-${{ hashFiles('source/Cargo.lock', 'source/src/**', 'source/build.rs', 'source/ios/Launcher.swift') }}
+          restore-keys: |
+            muguet-game-ios-rust1981-
+
+      - name: Download and validate game WASM
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          MUGUET_WASM_DEST="$GITHUB_WORKSPACE/input/game.wasm" node ci/download-wasm.cjs
+
+      - name: Build the host compiler
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo +1.98.1 build --release --locked
+
+      - name: Precompile the game for arm64 iOS
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/ios-game
+          ./target/release/muguet --patch ../input/game.wasm target/ios-game/game.patched.wasm
+          ./target/release/muguet --precompile-ios target/ios-game/game.patched.wasm target/ios-game/game.cwasm
+          test -s target/ios-game/game.cwasm
+          du -h target/ios-game/game.cwasm
+          echo "MUGUET_GAME_CODE=$PWD/target/ios-game/game.cwasm" >> "$GITHUB_ENV"
+
+      - name: Build and package iOS application
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RUSTFLAGS="--remap-path-prefix=$HOME=/home --remap-path-prefix=$PWD=/muguet"
+          IPHONEOS_DEPLOYMENT_TARGET=15.0 cargo +1.98.1 build --release --locked --no-default-features --target aarch64-apple-ios --target-dir target/ios
+          (cd ios && xcodegen generate --quiet)
+          xcodebuild -quiet -project ios/Muguet.xcodeproj -scheme Muguet -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath target/ios-xcode build \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CODE_SIGNING_ALLOWED=NO
+          app="$PWD/target/ios-xcode/Build/Products/Release-iphoneos/Muguet.app"
+          codesign --force --sign - --entitlements ios/Muguet-sideload.entitlements --generate-entitlement-der "$app"
+          codesign --verify --deep --strict "$app"
+          plutil -lint "$app/Info.plist"
+          lipo -archs "$app/muguet" | grep -w arm64
+          otool -l "$app/muguet" | grep -A5 'segname __GAME'
+          stage=$(mktemp -d)
+          mkdir "$stage/Payload"
+          cp -cRp "$app" "$stage/Payload/"
+          mkdir -p build
+          ipa="$PWD/build/Muguet-game-code.ipa"
+          (cd "$stage" && zip -qry "$ipa" Payload)
+          unzip -t "$ipa"
+          shasum -a 256 "$ipa" > build/Muguet-game-code.ipa.sha256
+          {
+            echo "Muguet with game code precompiled for arm64 iOS."
+            echo "Source: https://github.com/iOSVNNews/muguet/tree/0d43ef30746dc8c5076a6d509635b515f185bb40"
+            echo "Game WASM SHA-256: 11ca8d2c04c5e843d18ff4aea4899d72c86973c6b031df334e67c446b2ae83e0"
+            echo "Game code: INCLUDED in __GAME executable segment; no JIT required."
+            echo "Game data and shaders: NOT INCLUDED; import your compatible game.zip in the app."
+            echo "arm64; iOS 15.0+; bundle identifier $BUNDLE_ID"
+            echo "Ad-hoc signed; re-sign before installation."
+            echo "Not tested on a physical iPhone."
+            xcodebuild -version
+            rustc --version
+          } > build/BUILD-INFO.txt
+          cp LICENSE build/MUGUET-LICENSE.txt
+          du -h "$ipa"
+
+      - name: Upload private IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muguet-game-code-IPA
+          path: |
+            source/build/Muguet-game-code.ipa
+            source/build/Muguet-game-code.ipa.sha256
+            source/build/BUILD-INFO.txt
+            source/build/MUGUET-LICENSE.txt
+          if-no-files-found: error
+          retention-days: 7
