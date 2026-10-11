@@ -7,7 +7,7 @@ Precompiled release artifacts and CI orchestration for the [Muguet (iOSVN Rebuil
 ## Downloads
 
 Latest release binaries (ARM64 Mach-O IPA) are available under [Releases](https://github.com/iOSVNNews/muguet-ios-build/releases):
-- **Build 8**: [Muguet-v8.ipa](https://github.com/iOSVNNews/muguet-ios-build/releases/download/iosvn-runtime8-20261012/Muguet-v8.ipa) (SHA-256: `934ecd80da3d677d01982763be89594d75c4e53570dd8f635a48b2f58fb7875d`)
+- **Build 8.1 (Latest)**: [Muguet-v8.1.ipa](https://github.com/iOSVNNews/muguet-ios-build/releases/download/iosvn-runtime8.1-20261012/Muguet-v8.1.ipa) (SHA-256: `51dcbc1098efe5164f740d248c2a52b5b45f68c269638412353636b8c630904d`)
 
 For source code, technical documentation, and setup instructions, refer to the main repository: [iOSVNNews/muguet](https://github.com/iOSVNNews/muguet).
 
