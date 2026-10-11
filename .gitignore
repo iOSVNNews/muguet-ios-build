@@ -1,0 +1,5 @@
+/.local-keys/
+/build/
+*.ipa
+*.enc
+*.wasm

@@ -16,3 +16,10 @@ Game data and shaders are separate inputs. Import a compatible `game.zip`
 containing `data/manifest.json` and `b/<build>/shaders/index.json` after installing
 the application. No on-device execution or gameplay result is claimed by this
 build job.
+
+The private macOS job was blocked by the account's Actions billing limits on
+2026-10-11. The active build uses the public fork's
+`Build encrypted Muguet IPA with game code` workflow instead. That workflow
+uploads only an AES-256-GCM encrypted output bundle, and excludes iOS objects,
+raw WASM, and precompiled game data from caches and uploads. The decryption key
+is saved under the ignored `.local-keys/` directory on the owner's machine.
