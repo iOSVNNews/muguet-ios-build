@@ -334,8 +334,8 @@ const LOW_RAM_POTATO_SETTINGS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8
   <graphics>
     <TextureQuality value="0" />
     <ShaderQuality value="1" />
-    <ShadowQuality value="0" />
-    <ReflectionQuality value="0" />
+    <ShadowQuality value="1" />
+    <ReflectionQuality value="1" />
     <ReflectionMSAA value="0" />
     <SSAO value="0" />
     <AnisotropicFiltering value="0" />
@@ -346,9 +346,9 @@ const LOW_RAM_POTATO_SETTINGS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8
     <ParticleQuality value="0" />
     <GrassQuality value="0" />
     <DeepSurfaceQuality value="0" />
-    <PedLodBias value="-1.000000" />
-    <VehicleLodBias value="-1.000000" />
-    <Shadow_Distance value="0.000000" />
+    <PedLodBias value="-0.500000" />
+    <VehicleLodBias value="-0.500000" />
+    <Shadow_Distance value="0.500000" />
     <Shadow_SoftShadows value="0" />
     <Shadow_ParticleShadows value="false" />
     <Shadow_SplitZStart value="0.930000" />

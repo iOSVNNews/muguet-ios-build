@@ -1554,7 +1554,7 @@ func resetGraphicsSettings() {
 
 func shareDiagnostics() {
     let folder = configURL.deletingLastPathComponent()
-    let logs = ["muguet-previous.log", "muguet-runtime.log"].map { folder.appendingPathComponent($0) }
+    let logs = ["muguet-previous.log", "muguet-runtime.log", "muguet-crash.log"].map { folder.appendingPathComponent($0) }
         .filter { FileManager.default.fileExists(atPath: $0.path) }
     guard !logs.isEmpty,
           let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

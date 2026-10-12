@@ -11,6 +11,14 @@ pub fn install() {
         eprintln!("[diagnostics] build {} | device RAM {} MB | available {} MB", env!("CARGO_PKG_VERSION"),
             crate::performance::physical_memory() >> 20, crate::performance::available_memory().unwrap_or(0) >> 20);
     }
+
+    std::panic::set_hook(Box::new(|info| {
+        eprintln!("[CRASH/PANIC] {info}");
+        if let Some(home) = std::env::var_os("HOME") {
+            let crash_log = std::path::PathBuf::from(home).join("Documents/muguet-crash.log");
+            let _ = std::fs::write(crash_log, format!("[CRASH] {info}\n"));
+        }
+    }));
 }
 
 #[cfg(not(target_os = "ios"))]
