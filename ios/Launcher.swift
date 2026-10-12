@@ -239,6 +239,8 @@ func muguet_set_button_layout(_ idx: UInt32, _ dx: Double, _ dy: Double, _ scale
 func muguet_reset_button_layout()
 @_silgen_name("muguet_apply_button_layout")
 func muguet_apply_button_layout()
+@_silgen_name("muguet_reset_game_settings")
+func muguet_reset_game_settings() -> Bool
 
 final class Importer: ObservableObject {
     static let shared = Importer()
@@ -886,6 +888,8 @@ struct LauncherView: View {
     @State private var picking = false
     @State private var showingCheatSheet = false
     @State private var showingHUDEditor = false
+    @State private var showingResetAlert = false
+    @State private var resetAlertMessage = ""
     var isOverlay: Bool = false
     let play: () -> Void
 
@@ -985,6 +989,24 @@ struct LauncherView: View {
                     Toggle("Tối ưu đồ họa sâu (Deep Optimization 60-120 FPS Boost)", isOn: $s.deepOptimization)
                     Text("Tự động khống chế bóng đổ, cỏ rậm và khử răng cưa trong GTA V settings.xml để duy trì FPS tối đa khi máy nóng.")
                         .font(.caption).foregroundStyle(.secondary)
+
+                    Button(action: {
+                        resetGraphicsSettings()
+                        s.scale = 0.5
+                        s.textures = 0
+                        s.fps = 120
+                        s.deepOptimization = true
+                        s.promotionSync = true
+                        try? s.save()
+                        resetAlertMessage = "Đã khôi phục cài đặt đồ họa Rockstar GTA V về mặc định an toàn (Shader High, MSAA Tắt, Bóng Normal, 120 FPS). Lỗi màn hình đen do Max Setting đã được xử lý triệt để!"
+                        showingResetAlert = true
+                    }) {
+                        Label("Khôi phục đồ họa gốc (Sửa lỗi màn hình đen)", systemImage: "arrow.counterclockwise.circle.fill")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
                 }
 
                 Section("Tùy chỉnh Giao diện Nút Bấm (Touch Controls)") {
@@ -1290,6 +1312,11 @@ struct LauncherView: View {
         .fullScreenCover(isPresented: $showingHUDEditor) {
             HUDEditorView(settings: s)
         }
+        .alert("Thông báo Đồ họa", isPresented: $showingResetAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(resetAlertMessage)
+        }
     }
 
     @ViewBuilder var importView: some View {
@@ -1469,12 +1496,30 @@ public func muguetOpenMenu() {
             presenter.present(host, animated: true)
         }))
 
+        alert.addAction(UIAlertAction(title: "Khôi phục đồ họa (Fix màn hình đen)", style: .destructive, handler: { _ in
+            resetGraphicsSettings()
+        }))
+
         alert.addAction(UIAlertAction(title: "Thoát ứng dụng", style: .destructive, handler: { _ in
             exit(0)
         }))
 
         presenter.present(alert, animated: true)
     }
+}
+
+func resetGraphicsSettings() {
+    let folder = configURL.deletingLastPathComponent().appendingPathComponent("saves")
+    let fm = FileManager.default
+    if let enumerator = fm.enumerator(at: folder, includingPropertiesForKeys: nil) {
+        for case let fileURL as URL in enumerator {
+            if fileURL.lastPathComponent == "settings.xml" {
+                try? fm.removeItem(at: fileURL)
+            }
+        }
+    }
+    _ = muguet_reset_game_settings()
+    muguet_reload_settings()
 }
 
 func shareDiagnostics() {

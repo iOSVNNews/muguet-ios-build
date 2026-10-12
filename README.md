@@ -56,6 +56,10 @@ An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, a
 - **Comprehensive Cheat Library**: Invincibility (PAINKILLER), Max Health & Armor (TURTLE), All Weapons (TOOLUP), Clear Wanted Level (LAWYERUP), Super Jump, Moon Gravity, Weather Control, and vehicle spawning (Buzzard attack chopper, Duke O'Death, Comet, PCJ-600, Kraken submarine, etc.).
 - **One-Tap In-Game Activation**: Browse and activate cheats easily from the launcher or directly mid-game via the in-game menu (offline story mode only).
 
+### 9. Graphics Safeguards & Black Screen Recovery
+- **Automatic Profile Sanitization**: Automatically normalizes GTA V's internal `settings.xml` on launch to prevent invalid shader permutations (`ShaderQuality=1`), disabling memory-heavy MSAA/TXAA and incompatible tessellation.
+- **One-Tap Black Screen Fix**: If in-game graphics were previously changed to Max/Ultra causing a black screen on subsequent launches, tap **"Khôi phục đồ họa gốc (Sửa lỗi màn hình đen)"** in the Launcher (or pause menu), or simply delete `saves/userdata/Documents/Rockstar Games/GTA V/settings.xml` in the Files app. No need to re-copy game data!
+
 ---
 
 ## System Requirements

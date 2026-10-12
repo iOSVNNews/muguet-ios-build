@@ -242,41 +242,168 @@ fn settings(cfg_path: &Path) -> Vec<String> {
     engine_args
 }
 
-fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
-    let path = support_dir().join("saves/userdata/Documents/Rockstar Games/GTA V/settings.xml");
-    let Ok(xml) = std::fs::read_to_string(&path) else { return };
-    let mut new = xml.clone();
-    let mut set = |tag: &str, fix: &dyn Fn(i64) -> i64| {
-        let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(\d+)"\s*/>"#)).unwrap();
-        if let Some(c) = re.captures(&new) {
-            if let Ok(v) = c[1].parse::<i64>() {
-                let to = fix(v);
-                if to != v {
-                    new = re.replace(&new, format!(r#"<{tag} value="{to}" />"#).as_str()).into_owned();
-                    eprintln!("[config] {tag} {v} -> {to}");
-                }
+const DEFAULT_SAFE_SETTINGS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Settings>
+  <version value="27" />
+  <configSource>SMC_AUTO</configSource>
+  <graphics>
+    <TextureQuality value="0" />
+    <ShaderQuality value="1" />
+    <ShadowQuality value="1" />
+    <ReflectionQuality value="1" />
+    <ReflectionMSAA value="0" />
+    <SSAO value="0" />
+    <AnisotropicFiltering value="0" />
+    <MSAA value="0" />
+    <MSAAFragments value="0" />
+    <MSAAPostProcess value="0" />
+    <WaterQuality value="0" />
+    <ParticleQuality value="0" />
+    <GrassQuality value="0" />
+    <DeepSurfaceQuality value="0" />
+    <PedLodBias value="0.200000" />
+    <VehicleLodBias value="0.000000" />
+    <Shadow_Distance value="1.000000" />
+    <Shadow_SoftShadows value="0" />
+    <Shadow_ParticleShadows value="false" />
+    <Shadow_SplitZStart value="0.930000" />
+    <Shadow_SplitZEnd value="0.890000" />
+    <Shadow_aircraftExpBloom value="0.300000" />
+    <Shadow_DisableScreenSizeCheck value="false" />
+    <Reflection_MipBlur value="true" />
+    <FXAA value="true" />
+    <TXAA value="false" />
+    <Lighting_FogVolumes value="false" />
+    <Shader_SSA value="false" />
+    <DX_Version value="2" />
+    <CityDensity value="0.000000" />
+    <PedVarietyMultiplier value="0.000000" />
+    <VehicleVarietyMultiplier value="0.000000" />
+    <PostFX value="0" />
+    <DoF value="false" />
+    <HdStreamingInFlight value="false" />
+    <MaxLodScale value="0.000000" />
+    <MotionBlurStrength value="0.000000" />
+  </graphics>
+  <system>
+    <Windowed value="2" />
+  </system>
+  <video>
+    <Windowed value="2" />
+    <VSync value="1" />
+  </video>
+</Settings>
+"#;
+
+fn find_all_settings_files(dir: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    if !dir.is_dir() { return out; }
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                out.extend(find_all_settings_files(&p));
+            } else if p.file_name().and_then(|n| n.to_str()) == Some("settings.xml") {
+                out.push(p);
             }
         }
-    };
-    if let Some(q) = texture_quality {
-        set("TextureQuality", &|_| q.clamp(0, 2));
     }
-    set("ShaderQuality", &|v| v.max(1));
-    set("MSAA", &|v| if v > 4 { v.min(crate::gpu::max_msaa() as i64) } else { v });
+    out
+}
 
-    if deep_optimization {
-        // MeloNX-level Rock-solid 60/120 FPS Optimizations (Only applied if user turns it on)
-        set("ShadowQuality", &|v| v.min(1));        // Limit shadow cascade resolution to prevent GPU memory bus bottleneck
-        set("GrassQuality", &|v| v.min(1));         // Limit dense grass rendering (culprit #1 of countryside frame drops)
-        set("ReflectionMSAA", &|_| 0);             // Disable mirror anti-aliasing completely
-        set("Tessellation", &|_| 0);               // Disable displacement polygon tessellation (saves 35-40% GPU power)
-        set("ReflectionQuality", &|v| v.min(1));    // Cap reflection complexity
-        set("WaterQuality", &|v| v.min(1));         // Cap heavy water simulation
-        set("ParticleQuality", &|v| v.min(1));      // Cap particle effects
-        set("PostFX", &|v| v.min(1));               // Cap bloom / motion blur post-processing overhead
+#[no_mangle]
+pub extern "C" fn muguet_reset_game_settings() -> bool {
+    let base = support_dir().join("saves");
+    let mut modified = false;
+    let paths = find_all_settings_files(&base);
+    for p in paths {
+        let _ = std::fs::remove_file(&p);
+        modified = true;
     }
+    let default_dir = base.join("userdata/Documents/Rockstar Games/GTA V");
+    let _ = std::fs::create_dir_all(&default_dir);
+    let _ = std::fs::write(default_dir.join("settings.xml"), DEFAULT_SAFE_SETTINGS_XML);
+    eprintln!("[config] GTA V settings.xml reset to safe defaults");
+    modified
+}
 
-    if new != xml {
-        let _ = std::fs::write(&path, new.as_bytes());
+fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
+    let base = support_dir().join("saves");
+    let mut paths = find_all_settings_files(&base);
+    let default_path = base.join("userdata/Documents/Rockstar Games/GTA V/settings.xml");
+    if default_path.exists() && !paths.contains(&default_path) {
+        paths.push(default_path);
+    }
+    for path in paths {
+        let Ok(xml) = std::fs::read_to_string(&path) else { continue };
+        let mut new = xml.clone();
+
+        let mut set_num = |tag: &str, fix: &dyn Fn(i64) -> i64| {
+            let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(\d+)"\s*/>"#)).unwrap();
+            if let Some(c) = re.captures(&new) {
+                if let Ok(v) = c[1].parse::<i64>() {
+                    let to = fix(v);
+                    if to != v {
+                        new = re.replace(&new, format!(r#"<{tag} value="{to}" />"#).as_str()).into_owned();
+                        eprintln!("[config] {tag} {v} -> {to}");
+                    }
+                }
+            }
+        };
+
+        let mut set_bool = |tag: &str, target: bool| {
+            let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(?:true|false|\d+)"\s*/>"#)).unwrap();
+            let target_str = if target { "true" } else { "false" };
+            if re.is_match(&new) {
+                new = re.replace(&new, format!(r#"<{tag} value="{target_str}" />"#).as_str()).into_owned();
+            }
+        };
+
+        // CRITICAL FIX: ShaderQuality MUST be 1 (High).
+        // The shader pack (shaders/index.json) only contains WGSL shaders compiled for Quality 1.
+        // Quality 2 (Very High) causes missing shaders -> pipeline returns None -> all draw calls skipped -> black screen!
+        set_num("ShaderQuality", &|_| 1);
+
+        // MSAA and TXAA must be disabled on iOS (causes massive VRAM spikes > 3GB and Metal attachment failures)
+        set_num("MSAA", &|_| 0);
+        set_num("MSAAFragments", &|_| 0);
+        set_num("MSAAPostProcess", &|_| 0);
+        set_num("ReflectionMSAA", &|_| 0);
+        set_bool("TXAA", false);
+
+        // Tessellation is unsupported and causes WebAssembly / Metal pipeline failures
+        set_num("Tessellation", &|_| 0);
+
+        // Cap texture quality to prevent OOM exceeding iOS 2.8GB app ceiling
+        if let Some(q) = texture_quality {
+            set_num("TextureQuality", &|_| q.clamp(0, 1));
+        } else {
+            set_num("TextureQuality", &|v| v.min(1));
+        }
+
+        // Disable heavy soft shadows and flying streaming
+        set_num("Shadow_SoftShadows", &|_| 0);
+        set_bool("DoF", false);
+        set_bool("HdStreamingInFlight", false);
+
+        if deep_optimization {
+            set_num("ShadowQuality", &|v| v.min(1));
+            set_num("GrassQuality", &|v| v.min(1));
+            set_num("ReflectionQuality", &|v| v.min(1));
+            set_num("WaterQuality", &|v| v.min(1));
+            set_num("ParticleQuality", &|v| v.min(1));
+            set_num("PostFX", &|v| v.min(1));
+        } else {
+            set_num("ShadowQuality", &|v| v.min(2));
+            set_num("GrassQuality", &|v| v.min(2));
+            set_num("ReflectionQuality", &|v| v.min(2));
+            set_num("WaterQuality", &|v| v.min(1));
+            set_num("PostFX", &|v| v.min(2));
+        }
+
+        if new != xml {
+            let _ = std::fs::write(&path, new.as_bytes());
+            eprintln!("[config] sanitized settings at {}", path.display());
+        }
     }
 }
