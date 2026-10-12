@@ -60,6 +60,7 @@ fn backbuffer_size(window: &Window) -> (i32, i32) {
 impl ApplicationHandler for App {
     fn resumed(&mut self, el: &ActiveEventLoop) {
         gpu::SUSPENDED.store(false, std::sync::atomic::Ordering::Relaxed);
+        gpu::OCCLUDED.store(false, std::sync::atomic::Ordering::Relaxed);
 
         #[cfg(target_os = "ios")]
         input::set_focus(true);

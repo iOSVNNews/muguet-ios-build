@@ -238,7 +238,23 @@ fn settings(cfg_path: &Path) -> Vec<String> {
     if let Some(extra) = cfg.get("extra_args").and_then(|v| v.as_array()) {
         engine_args.extend(extra.iter().filter_map(|a| a.as_str().map(String::from)));
     }
-    fix_settings(num("texture_quality").map(|q| q as i64), deep_optimization);
+    let gfx = CustomGraphics {
+        texture_quality: num("texture_quality").map(|q| q as i64),
+        shadow_quality: num("shadow_quality").map(|q| q as i64).unwrap_or(1),
+        shadow_distance: num("shadow_distance").unwrap_or(1.0),
+        reflection_quality: num("reflection_quality").map(|q| q as i64).unwrap_or(1),
+        grass_quality: num("grass_quality").map(|q| q as i64).unwrap_or(0),
+        water_quality: num("water_quality").map(|q| q as i64).unwrap_or(0),
+        particle_quality: num("particle_quality").map(|q| q as i64).unwrap_or(0),
+        postfx: num("postfx").map(|q| q as i64).unwrap_or(0),
+        anisotropic_filtering: num("anisotropic_filtering").map(|q| q as i64).unwrap_or(0),
+        fxaa: cfg.get("fxaa").and_then(|v| v.as_bool()).unwrap_or(true),
+        city_density: num("city_density").unwrap_or(0.5),
+        ped_density: num("ped_density").unwrap_or(0.5),
+        distance_scaling: num("distance_scaling").unwrap_or(0.0),
+        deep_optimization,
+    };
+    fix_settings(gfx);
     engine_args
 }
 
@@ -394,6 +410,24 @@ pub extern "C" fn muguet_apply_low_ram_preset() -> bool {
     true
 }
 
+#[derive(Clone, Copy)]
+pub struct CustomGraphics {
+    pub texture_quality: Option<i64>,
+    pub shadow_quality: i64,
+    pub shadow_distance: f64,
+    pub reflection_quality: i64,
+    pub grass_quality: i64,
+    pub water_quality: i64,
+    pub particle_quality: i64,
+    pub postfx: i64,
+    pub anisotropic_filtering: i64,
+    pub fxaa: bool,
+    pub city_density: f64,
+    pub ped_density: f64,
+    pub distance_scaling: f64,
+    pub deep_optimization: bool,
+}
+
 fn set_num(new: &mut String, tag: &str, fix: impl Fn(i64) -> i64) {
     let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(\d+)"\s*/>"#)).unwrap();
     if let Some(c) = re.captures(new) {
@@ -407,6 +441,13 @@ fn set_num(new: &mut String, tag: &str, fix: impl Fn(i64) -> i64) {
     }
 }
 
+fn set_float(new: &mut String, tag: &str, target: f64) {
+    let re = regex::Regex::new(&format!(r#"<{tag}\s+value="[^"]*"\s*/>"#)).unwrap();
+    if re.is_match(new) {
+        *new = re.replace(new, format!(r#"<{tag} value="{target:.6}" />"#).as_str()).into_owned();
+    }
+}
+
 fn set_bool(new: &mut String, tag: &str, target: bool) {
     let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(?:true|false|\d+)"\s*/>"#)).unwrap();
     let target_str = if target { "true" } else { "false" };
@@ -415,11 +456,17 @@ fn set_bool(new: &mut String, tag: &str, target: bool) {
     }
 }
 
-fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
+fn fix_settings(gfx: CustomGraphics) {
     let base = support_dir().join("saves");
     let mut paths = find_all_settings_files(&base);
     let default_path = base.join("userdata/Documents/Rockstar Games/GTA V/settings.xml");
-    if default_path.exists() && !paths.contains(&default_path) {
+    if !default_path.exists() {
+        if let Some(parent) = default_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(&default_path, DEFAULT_SAFE_SETTINGS_XML);
+    }
+    if !paths.contains(&default_path) {
         paths.push(default_path);
     }
     for path in paths {
@@ -430,6 +477,8 @@ fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
         // The shader pack (shaders/index.json) only contains WGSL shaders compiled for Quality 1.
         // Quality 2 (Very High) causes missing shaders -> pipeline returns None -> all draw calls skipped -> black screen!
         set_num(&mut new, "ShaderQuality", |_| 1);
+        set_num(&mut new, "DX_Version", |_| 2);
+        set_num(&mut new, "Windowed", |_| 2);
 
         // MSAA and TXAA must be disabled on iOS (causes massive VRAM spikes > 3GB and Metal attachment failures)
         set_num(&mut new, "MSAA", |_| 0);
@@ -441,36 +490,48 @@ fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
         // Tessellation is unsupported and causes WebAssembly / Metal pipeline failures
         set_num(&mut new, "Tessellation", |_| 0);
 
+        // Disable heavy soft shadows and flying streaming
+        set_num(&mut new, "Shadow_SoftShadows", |_| 0);
+        set_bool(&mut new, "Lighting_FogVolumes", false);
+        set_bool(&mut new, "Shader_SSA", false);
+        set_bool(&mut new, "DoF", false);
+        set_bool(&mut new, "HdStreamingInFlight", false);
+
         // Cap texture quality to prevent OOM exceeding iOS 2.8GB app ceiling
-        if let Some(q) = texture_quality {
-            set_num(&mut new, "TextureQuality", move |_| q.clamp(0, 1));
+        if let Some(q) = gfx.texture_quality {
+            set_num(&mut new, "TextureQuality", move |_| q.clamp(0, 2));
         } else {
             set_num(&mut new, "TextureQuality", |v| v.min(1));
         }
 
-        // Disable heavy soft shadows and flying streaming
-        set_num(&mut new, "Shadow_SoftShadows", |_| 0);
-        set_bool(&mut new, "DoF", false);
-        set_bool(&mut new, "HdStreamingInFlight", false);
-
-        if deep_optimization {
-            set_num(&mut new, "ShadowQuality", |v| v.min(1));
-            set_num(&mut new, "GrassQuality", |v| v.min(1));
-            set_num(&mut new, "ReflectionQuality", |v| v.min(1));
-            set_num(&mut new, "WaterQuality", |v| v.min(1));
-            set_num(&mut new, "ParticleQuality", |v| v.min(1));
-            set_num(&mut new, "PostFX", |v| v.min(1));
+        if gfx.deep_optimization {
+            set_num(&mut new, "ShadowQuality", |_| gfx.shadow_quality.clamp(1, 2));
+            set_num(&mut new, "GrassQuality", |_| gfx.grass_quality.clamp(0, 1));
+            set_num(&mut new, "ReflectionQuality", |_| gfx.reflection_quality.clamp(1, 2));
+            set_num(&mut new, "WaterQuality", |_| gfx.water_quality.clamp(0, 1));
+            set_num(&mut new, "ParticleQuality", |_| gfx.particle_quality.clamp(0, 1));
+            set_num(&mut new, "PostFX", |_| gfx.postfx.clamp(0, 1));
         } else {
-            set_num(&mut new, "ShadowQuality", |v| v.min(2));
-            set_num(&mut new, "GrassQuality", |v| v.min(2));
-            set_num(&mut new, "ReflectionQuality", |v| v.min(2));
-            set_num(&mut new, "WaterQuality", |v| v.min(1));
-            set_num(&mut new, "PostFX", |v| v.min(2));
+            set_num(&mut new, "ShadowQuality", |_| gfx.shadow_quality.clamp(1, 3));
+            set_num(&mut new, "GrassQuality", |_| gfx.grass_quality.clamp(0, 2));
+            set_num(&mut new, "ReflectionQuality", |_| gfx.reflection_quality.clamp(1, 3));
+            set_num(&mut new, "WaterQuality", |_| gfx.water_quality.clamp(0, 2));
+            set_num(&mut new, "ParticleQuality", |_| gfx.particle_quality.clamp(0, 2));
+            set_num(&mut new, "PostFX", |_| gfx.postfx.clamp(0, 2));
         }
+
+        set_float(&mut new, "Shadow_Distance", gfx.shadow_distance.clamp(0.5, 2.0));
+        set_num(&mut new, "AnisotropicFiltering", |_| gfx.anisotropic_filtering.clamp(0, 16));
+        set_bool(&mut new, "FXAA", gfx.fxaa);
+        set_float(&mut new, "CityDensity", gfx.city_density.clamp(0.0, 1.0));
+        set_float(&mut new, "PedVarietyMultiplier", gfx.ped_density.clamp(0.0, 1.0));
+        set_float(&mut new, "VehicleVarietyMultiplier", gfx.city_density.clamp(0.0, 1.0));
+        set_float(&mut new, "PedLodBias", gfx.distance_scaling.clamp(-0.5, 1.0));
+        set_float(&mut new, "VehicleLodBias", gfx.distance_scaling.clamp(-0.5, 1.0));
 
         if new != xml {
             let _ = std::fs::write(&path, new.as_bytes());
-            eprintln!("[config] sanitized settings at {}", path.display());
+            eprintln!("[config] sanitized and updated settings at {}", path.display());
         }
     }
 }

@@ -30,6 +30,21 @@ final class Settings: ObservableObject {
     @Published var promotionSync = false
     @Published var deepOptimization = false
     @Published var maxPlayers = 32
+
+    // Granular GTA V Graphics Options
+    @Published var shadowQuality = 1 // 1: Normal, 2: High, 3: Very High
+    @Published var shadowDistance = 1.0 // 0.5: Short, 1.0: Normal, 1.5: Far
+    @Published var reflectionQuality = 1 // 1: Normal, 2: High, 3: Very High
+    @Published var grassQuality = 0 // 0: Normal, 1: High, 2: Very High
+    @Published var waterQuality = 0 // 0: Normal, 1: High, 2: Very High
+    @Published var particleQuality = 0 // 0: Normal, 1: High, 2: Very High
+    @Published var postFx = 0 // 0: Normal, 1: High, 2: Very High
+    @Published var anisotropicFiltering = 0 // 0: Off, 4: x4, 8: x8, 16: x16
+    @Published var fxaa = true // true / false
+    @Published var cityDensity = 0.5 // 0.0: Empty, 0.5: Medium, 1.0: Dense
+    @Published var pedDensity = 0.5 // 0.0: Low, 0.5: Medium, 1.0: High
+    @Published var distanceScaling = 0.0 // -0.5: Potato, 0.0: Normal, 0.5: Extended
+
     @Published var buttonScale = 1.0
     @Published var buttonOffsetX = 0.0
     @Published var buttonOffsetY = 0.0
@@ -43,15 +58,40 @@ final class Settings: ObservableObject {
         fps = 120
         scale = 0.5
         textures = 0
+        shadowQuality = 1
+        shadowDistance = 0.5
+        reflectionQuality = 1
+        grassQuality = 0
+        waterQuality = 0
+        particleQuality = 0
+        postFx = 0
+        anisotropicFiltering = 0
+        fxaa = true
+        cityDensity = 0.0
+        pedDensity = 0.0
+        distanceScaling = -0.5
         deepOptimization = true
         promotionSync = true
         do { try save() } catch {}
+        muguet_reload_settings()
     }
 
     func applyLowRamMode() {
         fps = 30
         scale = 0.35
         textures = 0
+        shadowQuality = 1
+        shadowDistance = 0.5
+        reflectionQuality = 1
+        grassQuality = 0
+        waterQuality = 0
+        particleQuality = 0
+        postFx = 0
+        anisotropicFiltering = 0
+        fxaa = false
+        cityDensity = 0.0
+        pedDensity = 0.0
+        distanceScaling = -0.5
         deepOptimization = true
         promotionSync = false
         do { try save() } catch {}
@@ -94,6 +134,18 @@ final class Settings: ObservableObject {
         if let v = json["pvp"] as? Bool { pvp = v }
         if let v = json["promotion_sync"] as? Bool { promotionSync = v }
         if let v = json["deep_optimization"] as? Bool { deepOptimization = v }
+        if let v = json["shadow_quality"] as? Int, (1...3).contains(v) { shadowQuality = v }
+        if let v = json["shadow_distance"] as? Double { shadowDistance = max(0.5, min(2.0, v)) }
+        if let v = json["reflection_quality"] as? Int, (1...3).contains(v) { reflectionQuality = v }
+        if let v = json["grass_quality"] as? Int, (0...2).contains(v) { grassQuality = v }
+        if let v = json["water_quality"] as? Int, (0...2).contains(v) { waterQuality = v }
+        if let v = json["particle_quality"] as? Int, (0...2).contains(v) { particleQuality = v }
+        if let v = json["postfx"] as? Int, (0...2).contains(v) { postFx = v }
+        if let v = json["anisotropic_filtering"] as? Int, [0, 2, 4, 8, 16].contains(v) { anisotropicFiltering = v }
+        if let v = json["fxaa"] as? Bool { fxaa = v }
+        if let v = json["city_density"] as? Double { cityDensity = max(0.0, min(1.0, v)) }
+        if let v = json["ped_density"] as? Double { pedDensity = max(0.0, min(1.0, v)) }
+        if let v = json["distance_scaling"] as? Double { distanceScaling = max(-0.5, min(1.0, v)) }
         if let v = json["button_scale"] as? Double { buttonScale = max(0.6, min(2.0, v)) }
         if let v = json["button_offset_x"] as? Double { buttonOffsetX = max(-150.0, min(150.0, v)) }
         if let v = json["button_offset_y"] as? Double { buttonOffsetY = max(-150.0, min(150.0, v)) }
@@ -182,6 +234,18 @@ final class Settings: ObservableObject {
         json["scale"] = scale
         json["fps_limit"] = fps
         json["texture_quality"] = textures
+        json["shadow_quality"] = shadowQuality
+        json["shadow_distance"] = shadowDistance
+        json["reflection_quality"] = reflectionQuality
+        json["grass_quality"] = grassQuality
+        json["water_quality"] = waterQuality
+        json["particle_quality"] = particleQuality
+        json["postfx"] = postFx
+        json["anisotropic_filtering"] = anisotropicFiltering
+        json["fxaa"] = fxaa
+        json["city_density"] = cityDensity
+        json["ped_density"] = pedDensity
+        json["distance_scaling"] = distanceScaling
         json["touch_sensitivity"] = (touch * 100).rounded() / 100
         json["aim_sensitivity"] = (aimSensitivity * 100).rounded() / 100
         json["aim_mode"] = aimMode
@@ -1025,9 +1089,22 @@ struct LauncherView: View {
                         s.scale = 0.5
                         s.textures = 0
                         s.fps = 120
+                        s.shadowQuality = 1
+                        s.shadowDistance = 1.0
+                        s.reflectionQuality = 1
+                        s.grassQuality = 0
+                        s.waterQuality = 0
+                        s.particleQuality = 0
+                        s.postFx = 0
+                        s.anisotropicFiltering = 0
+                        s.fxaa = true
+                        s.cityDensity = 0.5
+                        s.pedDensity = 0.5
+                        s.distanceScaling = 0.0
                         s.deepOptimization = true
                         s.promotionSync = true
                         try? s.save()
+                        muguet_reload_settings()
                         resetAlertMessage = "Đã khôi phục cài đặt đồ họa Rockstar GTA V về mặc định an toàn (Shader High, MSAA Tắt, Bóng Normal, 120 FPS). Lỗi màn hình đen do Max Setting đã được xử lý triệt để!"
                         showingResetAlert = true
                     }) {
@@ -1037,6 +1114,80 @@ struct LauncherView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.red)
+                }
+
+                Section("🎮 Cài đặt Đồ họa GTA V Chi tiết (In-Game Graphics)") {
+                    Text("Thiết lập trực tiếp các thông số đồ họa của GTA V ngay tại đây mà không cần chỉnh trong game.")
+                        .font(.caption).foregroundStyle(.secondary)
+
+                    Picker("Chất lượng Đổ bóng (Shadows)", selection: $s.shadowQuality) {
+                        Text("Bình thường (Mượt nhất)").tag(1)
+                        Text("Cao").tag(2)
+                        Text("Rất cao").tag(3)
+                    }
+
+                    Picker("Khoảng cách Đổ bóng (Shadow Distance)", selection: $s.shadowDistance) {
+                        Text("Ngắn (0.5× - Tiết kiệm RAM)").tag(0.5)
+                        Text("Tiêu chuẩn (1.0×)").tag(1.0)
+                        Text("Xa (1.5×)").tag(1.5)
+                    }
+
+                    Picker("Chất lượng Phản chiếu (Reflections)", selection: $s.reflectionQuality) {
+                        Text("Bình thường").tag(1)
+                        Text("Cao").tag(2)
+                        Text("Rất cao").tag(3)
+                    }
+
+                    Picker("Chất lượng Cỏ cây & Thảo mộc (Grass)", selection: $s.grassQuality) {
+                        Text("Bình thường (Chống tụt FPS đồi núi)").tag(0)
+                        Text("Cao").tag(1)
+                        Text("Rất cao").tag(2)
+                    }
+
+                    Picker("Chất lượng Mặt nước (Water)", selection: $s.waterQuality) {
+                        Text("Bình thường").tag(0)
+                        Text("Cao").tag(1)
+                        Text("Rất cao").tag(2)
+                    }
+
+                    Picker("Chất lượng Hạt & Hiệu ứng cháy nổ (Particles)", selection: $s.particleQuality) {
+                        Text("Bình thường").tag(0)
+                        Text("Cao").tag(1)
+                        Text("Rất cao").tag(2)
+                    }
+
+                    Picker("Hậu kỳ & Ánh sáng (Post FX)", selection: $s.postFx) {
+                        Text("Bình thường (Tối ưu FPS)").tag(0)
+                        Text("Cao (Bloom & Tia nắng)").tag(1)
+                        Text("Rất cao").tag(2)
+                    }
+
+                    Picker("Lọc vân bề mặt (Anisotropic Filtering)", selection: $s.anisotropicFiltering) {
+                        Text("Tắt (x0)").tag(0)
+                        Text("x4").tag(4)
+                        Text("x8").tag(8)
+                        Text("x16 (Rõ nét mặt đường)").tag(16)
+                    }
+
+                    Toggle("Khử răng cưa viền (FXAA)", isOn: $s.fxaa)
+
+                    Picker("Mật độ Xe cộ trên đường (Traffic)", selection: $s.cityDensity) {
+                        Text("Vắng vẻ (0% - Mượt nhất)").tag(0.0)
+                        Text("Vừa phải (50%)").tag(0.5)
+                        Text("Đông đúc (100% - Như PC)").tag(1.0)
+                    }
+
+                    Picker("Mật độ & Đa dạng Người đi bộ (Pedestrians)", selection: $s.pedDensity) {
+                        Text("Thấp (0% - Tiết kiệm RAM)").tag(0.0)
+                        Text("Vừa phải (50%)").tag(0.5)
+                        Text("Đông đúc (100%)").tag(1.0)
+                    }
+
+                    Picker("Tầm nhìn xa & Chi tiết vật thể (LOD Scale)", selection: $s.distanceScaling) {
+                        Text("Tiết kiệm RAM (-0.5)").tag(-0.5)
+                        Text("Tiêu chuẩn (0.0)").tag(0.0)
+                        Text("Tầm nhìn xa (+0.5)").tag(0.5)
+                    }
                 }
 
                 Section("Tùy chỉnh Giao diện Nút Bấm (Touch Controls)") {
