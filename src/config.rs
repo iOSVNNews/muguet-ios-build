@@ -394,6 +394,27 @@ pub extern "C" fn muguet_apply_low_ram_preset() -> bool {
     true
 }
 
+fn set_num(new: &mut String, tag: &str, fix: impl Fn(i64) -> i64) {
+    let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(\d+)"\s*/>"#)).unwrap();
+    if let Some(c) = re.captures(new) {
+        if let Ok(v) = c[1].parse::<i64>() {
+            let to = fix(v);
+            if to != v {
+                *new = re.replace(new, format!(r#"<{tag} value="{to}" />"#).as_str()).into_owned();
+                eprintln!("[config] {tag} {v} -> {to}");
+            }
+        }
+    }
+}
+
+fn set_bool(new: &mut String, tag: &str, target: bool) {
+    let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(?:true|false|\d+)"\s*/>"#)).unwrap();
+    let target_str = if target { "true" } else { "false" };
+    if re.is_match(new) {
+        *new = re.replace(new, format!(r#"<{tag} value="{target_str}" />"#).as_str()).into_owned();
+    }
+}
+
 fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
     let base = support_dir().join("saves");
     let mut paths = find_all_settings_files(&base);
@@ -405,67 +426,46 @@ fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
         let Ok(xml) = std::fs::read_to_string(&path) else { continue };
         let mut new = xml.clone();
 
-        let mut set_num = |tag: &str, fix: &dyn Fn(i64) -> i64| {
-            let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(\d+)"\s*/>"#)).unwrap();
-            if let Some(c) = re.captures(&new) {
-                if let Ok(v) = c[1].parse::<i64>() {
-                    let to = fix(v);
-                    if to != v {
-                        new = re.replace(&new, format!(r#"<{tag} value="{to}" />"#).as_str()).into_owned();
-                        eprintln!("[config] {tag} {v} -> {to}");
-                    }
-                }
-            }
-        };
-
-        let mut set_bool = |tag: &str, target: bool| {
-            let re = regex::Regex::new(&format!(r#"<{tag}\s+value="(?:true|false|\d+)"\s*/>"#)).unwrap();
-            let target_str = if target { "true" } else { "false" };
-            if re.is_match(&new) {
-                new = re.replace(&new, format!(r#"<{tag} value="{target_str}" />"#).as_str()).into_owned();
-            }
-        };
-
         // CRITICAL FIX: ShaderQuality MUST be 1 (High).
         // The shader pack (shaders/index.json) only contains WGSL shaders compiled for Quality 1.
         // Quality 2 (Very High) causes missing shaders -> pipeline returns None -> all draw calls skipped -> black screen!
-        set_num("ShaderQuality", &|_| 1);
+        set_num(&mut new, "ShaderQuality", |_| 1);
 
         // MSAA and TXAA must be disabled on iOS (causes massive VRAM spikes > 3GB and Metal attachment failures)
-        set_num("MSAA", &|_| 0);
-        set_num("MSAAFragments", &|_| 0);
-        set_num("MSAAPostProcess", &|_| 0);
-        set_num("ReflectionMSAA", &|_| 0);
-        set_bool("TXAA", false);
+        set_num(&mut new, "MSAA", |_| 0);
+        set_num(&mut new, "MSAAFragments", |_| 0);
+        set_num(&mut new, "MSAAPostProcess", |_| 0);
+        set_num(&mut new, "ReflectionMSAA", |_| 0);
+        set_bool(&mut new, "TXAA", false);
 
         // Tessellation is unsupported and causes WebAssembly / Metal pipeline failures
-        set_num("Tessellation", &|_| 0);
+        set_num(&mut new, "Tessellation", |_| 0);
 
         // Cap texture quality to prevent OOM exceeding iOS 2.8GB app ceiling
         if let Some(q) = texture_quality {
-            set_num("TextureQuality", &|_| q.clamp(0, 1));
+            set_num(&mut new, "TextureQuality", move |_| q.clamp(0, 1));
         } else {
-            set_num("TextureQuality", &|v| v.min(1));
+            set_num(&mut new, "TextureQuality", |v| v.min(1));
         }
 
         // Disable heavy soft shadows and flying streaming
-        set_num("Shadow_SoftShadows", &|_| 0);
-        set_bool("DoF", false);
-        set_bool("HdStreamingInFlight", false);
+        set_num(&mut new, "Shadow_SoftShadows", |_| 0);
+        set_bool(&mut new, "DoF", false);
+        set_bool(&mut new, "HdStreamingInFlight", false);
 
         if deep_optimization {
-            set_num("ShadowQuality", &|v| v.min(1));
-            set_num("GrassQuality", &|v| v.min(1));
-            set_num("ReflectionQuality", &|v| v.min(1));
-            set_num("WaterQuality", &|v| v.min(1));
-            set_num("ParticleQuality", &|v| v.min(1));
-            set_num("PostFX", &|v| v.min(1));
+            set_num(&mut new, "ShadowQuality", |v| v.min(1));
+            set_num(&mut new, "GrassQuality", |v| v.min(1));
+            set_num(&mut new, "ReflectionQuality", |v| v.min(1));
+            set_num(&mut new, "WaterQuality", |v| v.min(1));
+            set_num(&mut new, "ParticleQuality", |v| v.min(1));
+            set_num(&mut new, "PostFX", |v| v.min(1));
         } else {
-            set_num("ShadowQuality", &|v| v.min(2));
-            set_num("GrassQuality", &|v| v.min(2));
-            set_num("ReflectionQuality", &|v| v.min(2));
-            set_num("WaterQuality", &|v| v.min(1));
-            set_num("PostFX", &|v| v.min(2));
+            set_num(&mut new, "ShadowQuality", |v| v.min(2));
+            set_num(&mut new, "GrassQuality", |v| v.min(2));
+            set_num(&mut new, "ReflectionQuality", |v| v.min(2));
+            set_num(&mut new, "WaterQuality", |v| v.min(1));
+            set_num(&mut new, "PostFX", |v| v.min(2));
         }
 
         if new != xml {
