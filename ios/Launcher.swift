@@ -1309,6 +1309,10 @@ struct LauncherView: View {
                     Text("1. Giải nén file zip chứa data trên máy tính hoặc app Tệp.\n2. Mở app Tệp (Files) > Trên iPhone/iPad > Muguet.\n3. Tạo thư mục tên là 'game' (chữ thường).\n4. Dán 2 thư mục 'data' và 'b' vào bên trong thư mục 'game'.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                    Divider().padding(.vertical, 2)
+                    Text("📦 Lưu ý dung lượng: Game đầy đủ chiếm ~21 GB. Nếu giải nén trực tiếp trên iPhone/iPad cần trống tối thiểu 42 GB (21 GB zip + 21 GB giải nén; sau khi xong xóa file zip đi còn 21 GB). Giải nén trước trên máy tính rồi chép vào sẽ chỉ tốn 21 GB bộ nhớ máy.")
+                        .font(.caption2)
+                        .foregroundStyle(.yellow)
                 }
                 .padding(10)
                 .background(Color.secondary.opacity(0.12))

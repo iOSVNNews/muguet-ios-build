@@ -65,7 +65,7 @@ An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, a
 | **OS** | iOS / iPadOS 15.0+ | iOS / iPadOS 16.0+ |
 | **SoC** | Apple A12 Bionic | Apple A15 Bionic, A16, A17 Pro, M1+ |
 | **RAM** | 4 GB | 6 GB to 8 GB+ |
-| **Storage** | ~4 GB free | 8 GB+ free |
+| **Storage** | 22 GB free (direct folder copy) | 45 GB+ free (if unzipping on-device: 21 GB zip + 21 GB extracted) |
 
 ---
 
@@ -88,6 +88,11 @@ Precompiled IPA binaries are available on the [Releases page](https://github.com
 ## Game Assets Installation
 
 Muguet is an open-source game engine reimplementation and does **not** contain any proprietary game assets, audio files, or textures.
+
+> **Storage Requirements Notice**:
+> - Full game assets require **20 – 21 GB** of storage when installed.
+> - **Unzipping on iPhone/iPad**: Requires at least **42 GB of free space** (21 GB for the `.zip` archive + 21 GB for extracted files). Once extraction is complete, deleting the `.zip` file leaves ~21 GB of used space.
+> - **Space-Saving Tip**: Extract the `.zip` file on your computer (PC/Mac) first, then copy the extracted `data` and `b` folders to your device via 3uTools, iTunes, or Finder file sharing. This only uses **21 GB** on your iPhone/iPad!
 
 ### Method 1: Direct Folder Copy via Files App (Fastest & Recommended)
 1. Extract your `game.zip` asset package on your computer or directly on your device.
