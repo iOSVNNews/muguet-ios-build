@@ -29,6 +29,7 @@ final class Settings: ObservableObject {
     @Published var pvp = false
     @Published var promotionSync = false
     @Published var deepOptimization = false
+    @Published var maxPlayers = 32
     @Published var buttonScale = 1.0
     @Published var buttonOffsetX = 0.0
     @Published var buttonOffsetY = 0.0
@@ -37,6 +38,15 @@ final class Settings: ObservableObject {
     @Published var stickOffsetY = 0.0
     @Published var customButtons: [Int: [Double]] = [:]
     var extra: [String: Any] = [:]
+
+    func apply120FpsBoost() {
+        fps = 120
+        scale = 0.5
+        textures = 0
+        deepOptimization = true
+        promotionSync = true
+        do { try save() } catch {}
+    }
 
     var formattedCreateCode: String {
         let m = mode == 1 ? "S" : "B"
@@ -51,7 +61,7 @@ final class Settings: ObservableObject {
         if let v = json["start_mode"] as? Int, (1...2).contains(v) { mode = v }
         if let v = json["scale"] as? Double { scale = v }
         if let v = json["fps_limit"] as? Int, [30, 60, 120].contains(v) { fps = v }
-        if fps > UIScreen.main.maximumFramesPerSecond { fps = 60 }
+        if let v = json["max_players"] as? Int, [16, 32, 64].contains(v) { maxPlayers = v }
         if let v = json["texture_quality"] as? Int, (0...2).contains(v) { textures = v }
         if let v = json["touch_sensitivity"] as? Double { touch = max(0.1, min(10.0, v)) }
         if let v = json["aim_sensitivity"] as? Double { aimSensitivity = max(0.1, min(5.0, v)) }
@@ -115,6 +125,7 @@ final class Settings: ObservableObject {
         json["room_mode"] = roomMode
         json["promotion_sync"] = promotionSync
         json["deep_optimization"] = deepOptimization
+        json["max_players"] = maxPlayers
         json["room_digits"] = roomDigits
         json["join_code"] = joinCode
 
@@ -285,6 +296,7 @@ let CHEAT_LIST: [CheatItem] = [
     CheatItem(code: "GOTGILLS", name: "Bơi siêu nhanh", desc: "Tăng tốc độ bơi dưới nước", category: "Nhân vật"),
     CheatItem(code: "HOPTOIT", name: "Siêu nhảy", desc: "Nhảy cao gấp 10 lần bình thường", category: "Nhân vật"),
     CheatItem(code: "SKYDIVE", name: "Trang bị Dù nhảy", desc: "Nhận dù để nhảy từ trên cao", category: "Nhân vật"),
+    CheatItem(code: "LIQUOR", name: "Chế độ say rượu", desc: "Đi đứng lảo đảo hiệu ứng say xỉn", category: "Nhân vật"),
 
     CheatItem(code: "BUZZOFF", name: "Trực thăng Buzzard", desc: "Trực thăng chiến đấu có súng & tên lửa", category: "Phương tiện"),
     CheatItem(code: "COMET", name: "Xe thể thao Comet", desc: "Xe Porsche 2 cửa siêu tốc", category: "Phương tiện"),
@@ -295,11 +307,16 @@ let CHEAT_LIST: [CheatItem] = [
     CheatItem(code: "BARNSTORM", name: "Máy bay Stunt Plane", desc: "Máy bay nhào lộn cánh quạt", category: "Phương tiện"),
     CheatItem(code: "VINEWOOD", name: "Xe Limousine", desc: "Xe sang trọng kéo dài", category: "Phương tiện"),
     CheatItem(code: "TRASHED", name: "Xe rác Trashmaster", desc: "Xe chở rác bọc thép húc xe khác", category: "Phương tiện"),
+    CheatItem(code: "DEATHCAR", name: "Xe bọc thép Duke O'Death", desc: "Xe cơ bắp chống đạn chống nổ cực mạnh", category: "Phương tiện"),
+    CheatItem(code: "BUBBLES", name: "Tàu ngầm Kraken", desc: "Tàu lặn khám phá đáy đại dương", category: "Phương tiện"),
+    CheatItem(code: "FLYSPRAY", name: "Máy bay Duster", desc: "Máy bay cánh quạt cổ điển", category: "Phương tiện"),
 
     CheatItem(code: "HOTHANDS", name: "Nắm đấm phát nổ", desc: "Đấm kẻ địch văng xa và phát nổ", category: "Chiến đấu"),
     CheatItem(code: "INCENDIARY", name: "Đạn lửa", desc: "Bắn ra đạn thiêu đốt mục tiêu", category: "Chiến đấu"),
     CheatItem(code: "HIGHEX", name: "Đạn nổ", desc: "Mỗi phát bắn tạo ra vụ nổ lớn", category: "Chiến đấu"),
     CheatItem(code: "DEADEYE", name: "Làm chậm khi ngắm", desc: "Làm chậm thời gian khi giữ nút ngắm", category: "Chiến đấu"),
+
+    CheatItem(code: "SKYFALL", name: "Rơi tự do từ trời", desc: "Thả nhân vật từ trên chín tầng mây", category: "Thế giới"),
     CheatItem(code: "SLOWMO", name: "Làm chậm toàn game", desc: "Hiệu ứng slow-motion điện ảnh", category: "Thế giới"),
     CheatItem(code: "FLOATER", name: "Trọng lực Mặt Trăng", desc: "Xe và người bay lơ lửng nhẹ", category: "Thế giới"),
     CheatItem(code: "MAKEITRAIN", name: "Đổi thời tiết", desc: "Thay đổi nắng, mưa, bão sấm chớp", category: "Thế giới"),
@@ -925,32 +942,48 @@ struct LauncherView: View {
                     }
                 }
 
-                Picker("Resolution", selection: $s.scale) {
-                    Text("35 % (fastest)").tag(0.35)
-                    Text("50 %").tag(0.5)
-                    Text("75 %").tag(0.75)
-                    Text("100 % (sharpest)").tag(1.0)
-                }
-                Picker("Textures", selection: $s.textures) {
-                    Text("Normal (less memory)").tag(0)
-                    Text("High").tag(1)
-                    Text("Very High").tag(2)
-                }
-                Picker("Frame limit", selection: $s.fps) {
-                    Text("30 fps (cooler)").tag(30)
-                    Text("60 fps").tag(60)
-                    if UIScreen.main.maximumFramesPerSecond >= 120 { Text("120 fps (ProMotion)").tag(120) }
-                }
-                Text("Higher frame rates use more power. Low memory automatically reduces the render limit.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Section("Cấu hình Đồ họa & Kích hoạt 120 FPS") {
+                    Button(action: {
+                        s.apply120FpsBoost()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.fill").foregroundStyle(.yellow)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("⚡ Kích hoạt Cấu hình 120 FPS Siêu Mượt").bold()
+                                Text("Tự động đặt 120 FPS, 50% Resolution, Textures Normal, bật ProMotion V-Sync & Deep Optimization.")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.indigo)
 
-                Section("Tối ưu hiệu năng & Mượt mà (Tùy chọn)") {
-                    Toggle("Khóa nhịp ProMotion V-Sync (CADisplayLink)", isOn: $s.promotionSync)
-                    Text("Đồng bộ chính xác với tần số quét 60Hz/120Hz của màn hình iPhone/iPad để triệt tiêu khựng hình (micro-stutter) và giảm quá nhiệt. (Mặc định: Tắt - dùng nhịp dựng hình tự do ban đầu).")
+                    Picker("Tốc độ khung hình (Frame Limit)", selection: $s.fps) {
+                        Text("30 fps (Tiết kiệm pin)").tag(30)
+                        Text("60 fps (Mặc định)").tag(60)
+                        Text("120 fps (Mở khóa 120 FPS / ProMotion)").tag(120)
+                    }
+
+                    Picker("Độ phân giải (Resolution)", selection: $s.scale) {
+                        Text("35 % (Siêu nhẹ)").tag(0.35)
+                        Text("50 % (Khuyên dùng cho 120 FPS)").tag(0.5)
+                        Text("65 % (Cân bằng)").tag(0.65)
+                        Text("75 % (Rõ nét)").tag(0.75)
+                        Text("100 % (Độ phân giải gốc)").tag(1.0)
+                    }
+
+                    Picker("Chất lượng Textures", selection: $s.textures) {
+                        Text("Bình thường / Thấp (Ít tốn RAM)").tag(0)
+                        Text("Cao").tag(1)
+                        Text("Rất cao").tag(2)
+                    }
+
+                    Toggle("Khóa nhịp ProMotion V-Sync 120Hz (CADisplayLink)", isOn: $s.promotionSync)
+                    Text("Đồng bộ chính xác với tần số quét 60Hz/120Hz của màn hình iPhone/iPad để triệt tiêu khựng hình và giữ khung hình 120 FPS mượt nhất.")
                         .font(.caption).foregroundStyle(.secondary)
 
-                    Toggle("Tối ưu đồ họa sâu kiểu MeloNX (60-120 FPS Boost)", isOn: $s.deepOptimization)
-                    Text("Tự động khống chế bóng đổ (ShadowQuality=1), cỏ rậm (GrassQuality=1), tắt phản chiếu khử răng cưa và đa giác lồi (Tessellation=0) trong GTA V settings.xml để duy trì FPS tối đa khi máy nóng. (Mặc định: Tắt - giữ nguyên chất lượng đồ họa gốc của game).")
+                    Toggle("Tối ưu đồ họa sâu (Deep Optimization 60-120 FPS Boost)", isOn: $s.deepOptimization)
+                    Text("Tự động khống chế bóng đổ, cỏ rậm và khử răng cưa trong GTA V settings.xml để duy trì FPS tối đa khi máy nóng.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
 
@@ -1055,7 +1088,18 @@ struct LauncherView: View {
                                 }
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("3. Mã phòng chia sẻ cho bạn bè:").font(.subheadline.bold())
+                                    Text("3. Số người chơi tối đa (Server capacity):").font(.subheadline.bold())
+                                    Picker("Giới hạn người chơi", selection: $s.maxPlayers) {
+                                        Text("32 Người chơi").tag(32)
+                                        Text("64 Người chơi").tag(64)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    Text("Tạo phòng hỗ trợ tối đa \(s.maxPlayers) người chơi trực tuyến cùng lúc.")
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                }
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("4. Mã phòng chia sẻ cho bạn bè:").font(.subheadline.bold())
                                     HStack(spacing: 8) {
                                         Text(s.formattedCreateCode)
                                             .font(.title2.monospaced().bold())
@@ -1176,7 +1220,7 @@ struct LauncherView: View {
 
                                 HStack {
                                     Image(systemName: "globe.americas.fill").foregroundStyle(.green)
-                                    Text("Sảnh chung công khai (Tối đa 32 người/phòng)")
+                                    Text("Sảnh chung công khai (Hỗ trợ 32 / 64 người/phòng)")
                                         .fontWeight(.medium)
                                 }
                                 Text("Tự động kết nối vào sảnh chung với người chơi trực tuyến trên server AWS iOSVN. Chế độ Hòa bình bật mặc định.")
@@ -1189,7 +1233,7 @@ struct LauncherView: View {
                                     Text("Sandbox").tag(2)
                                 }
                                 .pickerStyle(.segmented)
-                                Text("Mở phòng trên Wi-Fi (Tối đa 32 người): Kết nối qua: \(localIPs().joined(separator: " hoặc "))")
+                                Text("Mở phòng trên Wi-Fi (Tối đa \(s.maxPlayers) người): Kết nối qua: \(localIPs().joined(separator: " hoặc "))")
                                     .font(.callout).textSelection(.enabled)
                             }
                         }
@@ -1204,7 +1248,7 @@ struct LauncherView: View {
                             }
                             HStack {
                                 Circle().fill(Color.green).frame(width: 8, height: 8)
-                                Text("Server AWS iOSVN Singapore (Ping ~40ms, Tối đa 32 người)")
+                                Text("Server AWS iOSVN Singapore (Ping ~40ms, Hỗ trợ 32 / 64 người)")
                                     .font(.caption2).foregroundStyle(.secondary)
                             }
                         }
@@ -1257,6 +1301,18 @@ struct LauncherView: View {
                 Button("Import game data .zip") { picking = true }
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("💡 Hướng dẫn cài đặt nhanh qua ứng dụng Tệp:")
+                        .font(.caption.bold())
+                        .foregroundStyle(.orange)
+                    Text("1. Giải nén file zip chứa data trên máy tính hoặc app Tệp.\n2. Mở app Tệp (Files) > Trên iPhone/iPad > Muguet.\n3. Tạo thư mục tên là 'game' (chữ thường).\n4. Dán 2 thư mục 'data' và 'b' vào bên trong thư mục 'game'.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(10)
+                .background(Color.secondary.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             if let e = importer.error { Text(e).foregroundStyle(.red).font(.callout).multilineTextAlignment(.center) }
         }
@@ -1326,7 +1382,8 @@ private final class RefreshHint: NSObject {
 
     func set(_ requested: UInt32, lockedPacing: Bool = false) {
         self.lockedPacingEnabled = lockedPacing
-        let maximum = Float(UIScreen.main.maximumFramesPerSecond)
+        let screenMax = Float(UIScreen.main.maximumFramesPerSecond)
+        let maximum = max(120.0, screenMax)
         let rate = requested == 0 ? maximum : min(maximum, Float(requested))
         if link == nil {
             link = CADisplayLink(target: self, selector: #selector(tick(_:)))
