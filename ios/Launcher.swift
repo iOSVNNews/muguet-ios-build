@@ -48,6 +48,17 @@ final class Settings: ObservableObject {
         do { try save() } catch {}
     }
 
+    func applyLowRamMode() {
+        fps = 30
+        scale = 0.35
+        textures = 0
+        deepOptimization = true
+        promotionSync = false
+        do { try save() } catch {}
+        _ = muguet_apply_low_ram_preset()
+        muguet_reload_settings()
+    }
+
     var formattedCreateCode: String {
         let m = mode == 1 ? "S" : "B"
         let p = pvp ? "X" : "P"
@@ -241,6 +252,8 @@ func muguet_reset_button_layout()
 func muguet_apply_button_layout()
 @_silgen_name("muguet_reset_game_settings")
 func muguet_reset_game_settings() -> Bool
+@_silgen_name("muguet_apply_low_ram_preset")
+func muguet_apply_low_ram_preset() -> Bool
 
 final class Importer: ObservableObject {
     static let shared = Importer()
@@ -961,6 +974,23 @@ struct LauncherView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.indigo)
+
+                    Button(action: {
+                        s.applyLowRamMode()
+                        resetAlertMessage = "Đã kích hoạt Cấu hình Siêu Tiết Kiệm RAM: 35% Resolution, 30 FPS, triệt tiêu bóng đổ, giảm NPC & xe cộ để tối ưu bộ nhớ cho máy RAM thấp (~800MB - 1GB RAM)!"
+                        showingResetAlert = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "leaf.fill").foregroundStyle(.green)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("🍃 Kích hoạt Cấu hình Siêu Tiết Kiệm RAM (~800MB)").bold()
+                                Text("Dành cho máy RAM thấp: 35% Resolution, 30 FPS, tắt bóng, giảm NPC & xe cộ.")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
 
                     Picker("Tốc độ khung hình (Frame Limit)", selection: $s.fps) {
                         Text("30 fps (Tiết kiệm pin)").tag(30)

@@ -327,6 +327,73 @@ pub extern "C" fn muguet_reset_game_settings() -> bool {
     modified
 }
 
+const LOW_RAM_POTATO_SETTINGS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Settings>
+  <version value="27" />
+  <configSource>SMC_AUTO</configSource>
+  <graphics>
+    <TextureQuality value="0" />
+    <ShaderQuality value="1" />
+    <ShadowQuality value="0" />
+    <ReflectionQuality value="0" />
+    <ReflectionMSAA value="0" />
+    <SSAO value="0" />
+    <AnisotropicFiltering value="0" />
+    <MSAA value="0" />
+    <MSAAFragments value="0" />
+    <MSAAPostProcess value="0" />
+    <WaterQuality value="0" />
+    <ParticleQuality value="0" />
+    <GrassQuality value="0" />
+    <DeepSurfaceQuality value="0" />
+    <PedLodBias value="-1.000000" />
+    <VehicleLodBias value="-1.000000" />
+    <Shadow_Distance value="0.000000" />
+    <Shadow_SoftShadows value="0" />
+    <Shadow_ParticleShadows value="false" />
+    <Shadow_SplitZStart value="0.930000" />
+    <Shadow_SplitZEnd value="0.890000" />
+    <Shadow_aircraftExpBloom value="0.000000" />
+    <Shadow_DisableScreenSizeCheck value="true" />
+    <Reflection_MipBlur value="false" />
+    <FXAA value="false" />
+    <TXAA value="false" />
+    <Lighting_FogVolumes value="false" />
+    <Shader_SSA value="false" />
+    <DX_Version value="2" />
+    <CityDensity value="0.000000" />
+    <PedVarietyMultiplier value="0.000000" />
+    <VehicleVarietyMultiplier value="0.000000" />
+    <PostFX value="0" />
+    <DoF value="false" />
+    <HdStreamingInFlight value="false" />
+    <MaxLodScale value="0.000000" />
+    <MotionBlurStrength value="0.000000" />
+  </graphics>
+  <system>
+    <Windowed value="2" />
+  </system>
+  <video>
+    <Windowed value="2" />
+    <VSync value="1" />
+  </video>
+</Settings>
+"#;
+
+#[no_mangle]
+pub extern "C" fn muguet_apply_low_ram_preset() -> bool {
+    let base = support_dir().join("saves");
+    let paths = find_all_settings_files(&base);
+    for p in &paths {
+        let _ = std::fs::write(p, LOW_RAM_POTATO_SETTINGS_XML);
+    }
+    let default_dir = base.join("userdata/Documents/Rockstar Games/GTA V");
+    let _ = std::fs::create_dir_all(&default_dir);
+    let _ = std::fs::write(default_dir.join("settings.xml"), LOW_RAM_POTATO_SETTINGS_XML);
+    eprintln!("[config] applied Low-RAM Potato Mode preset (target ~800MB - 1GB RAM)");
+    true
+}
+
 fn fix_settings(texture_quality: Option<i64>, deep_optimization: bool) {
     let base = support_dir().join("saves");
     let mut paths = find_all_settings_files(&base);

@@ -23,6 +23,7 @@ An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, a
 - **Zero Web Overhead**: Bypasses browser sandboxes, WebGPU layers, and WebKit compositor overhead, minimizing draw-call latency and memory consumption.
 - **120 FPS ProMotion Support**: Supports 30 FPS, 60 FPS, and unlocks full 120 FPS with `CADisplayLink` frame synchronization.
 - **1-Click 120 FPS Performance Preset**: Instantly optimizes resolution scale (50%), textures, ProMotion V-Sync, and Deep Optimization for maximum sustained 120 FPS without thermal throttling.
+- **1-Click Low-RAM Potato Mode Preset (~800MB - 1GB RAM)**: Ultra-optimized profile for low-memory iOS devices (iPhone 8 / X / XR / iPad Gen 6-9) running at 35% resolution scale, 30 FPS, shadow maps eliminated, and pedestrian & vehicle variety clamped to minimal models, cutting memory footprint by up to 60%.
 
 ### 3. Customizable Touchscreen HUD
 - **In-Game Layout Editor**: Visual layout customizer accessible from the launcher and pause menu.
