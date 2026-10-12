@@ -1024,37 +1024,40 @@ struct LauncherView: View {
                 }
 
                 Section("Cấu hình Đồ họa & Kích hoạt 120 FPS") {
-                    Button(action: {
-                        s.apply120FpsBoost()
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "bolt.fill").foregroundStyle(.yellow)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("⚡ Kích hoạt Cấu hình 120 FPS Siêu Mượt").bold()
-                                Text("Tự động đặt 120 FPS, 50% Resolution, Textures Normal, bật ProMotion V-Sync & Deep Optimization.")
-                                    .font(.caption2).foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            s.apply120FpsBoost()
+                            resetAlertMessage = "Đã kích hoạt cấu hình 120 FPS Siêu Mượt!"
+                            showingResetAlert = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bolt.fill")
+                                Text("120 FPS Siêu Mượt").bold()
                             }
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.indigo)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.indigo)
+                        .controlSize(.regular)
 
-                    Button(action: {
-                        s.applyLowRamMode()
-                        resetAlertMessage = "Đã kích hoạt Cấu hình Siêu Tiết Kiệm RAM: 35% Resolution, 30 FPS, triệt tiêu bóng đổ, giảm NPC & xe cộ để tối ưu bộ nhớ cho máy RAM thấp (~800MB - 1GB RAM)!"
-                        showingResetAlert = true
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "leaf.fill").foregroundStyle(.green)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("🍃 Kích hoạt Cấu hình Siêu Tiết Kiệm RAM (~800MB)").bold()
-                                Text("Dành cho máy RAM thấp: 35% Resolution, 30 FPS, tắt bóng, giảm NPC & xe cộ.")
-                                    .font(.caption2).foregroundStyle(.secondary)
+                        Button(action: {
+                            s.applyLowRamMode()
+                            resetAlertMessage = "Đã kích hoạt Cấu hình Siêu Tiết Kiệm RAM (~800MB)!"
+                            showingResetAlert = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "leaf.fill")
+                                Text("Tiết Kiệm RAM").bold()
                             }
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
                         }
+                        .buttonStyle(.bordered)
+                        .tint(.green)
+                        .controlSize(.regular)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
+                    .padding(.vertical, 2)
 
                     Picker("Tốc độ khung hình (Frame Limit)", selection: $s.fps) {
                         Text("30 fps (Tiết kiệm pin)").tag(30)
@@ -1199,36 +1202,6 @@ struct LauncherView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
 
-                    HStack {
-                        Text("Kích thước nút")
-                        Slider(value: $s.buttonScale, in: 0.7...1.5, step: 0.05)
-                        Text(String(format: "%.2f×", s.buttonScale)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
-                    HStack {
-                        Text("Độ trong suốt nút")
-                        Slider(value: $s.buttonOpacity, in: 0.12...0.70, step: 0.02)
-                        Text(String(format: "%.0f%%", s.buttonOpacity * 100)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
-                    HStack {
-                        Text("Dời cụm nút (Ngang X)")
-                        Slider(value: $s.buttonOffsetX, in: -60.0...60.0, step: 5.0)
-                        Text(String(format: "%+.0f", s.buttonOffsetX)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
-                    HStack {
-                        Text("Dời cụm nút (Dọc Y)")
-                        Slider(value: $s.buttonOffsetY, in: -60.0...60.0, step: 5.0)
-                        Text(String(format: "%+.0f", s.buttonOffsetY)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
-                    HStack {
-                        Text("Dời Joystick (Ngang X)")
-                        Slider(value: $s.stickOffsetX, in: -40.0...60.0, step: 5.0)
-                        Text(String(format: "%+.0f", s.stickOffsetX)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
-                    HStack {
-                        Text("Dời Joystick (Dọc Y)")
-                        Slider(value: $s.stickOffsetY, in: -40.0...60.0, step: 5.0)
-                        Text(String(format: "%+.0f", s.stickOffsetY)).monospacedDigit().frame(width: 55, alignment: .trailing)
-                    }
                     Button("Khôi phục mặc định nút bấm") {
                         s.resetLayout()
                     }
