@@ -78,7 +78,8 @@ An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, a
 
 Precompiled IPA binaries are available on the [Releases page](https://github.com/iOSVNNews/muguet/releases):
 
-- **Latest Official Build 8.8 IPA** (Stability & Low-RAM Release): [Muguet-v8.8.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.8-20261012) (SHA-256: `ffec5e5076842cb2a096aa0dc886b284cfee9e75e47e3d322223370e61f4bb46`)
+- **Build 8.8 Beta IPA** (In-Game Graphics Settings & UI Ergonomics): [Muguet-v8.8-beta.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.8-beta-20261012) (SHA-256: `b8a5f8763331501be3d85292ae131767d5f8b152b37c8b6a6f6393d7b28d503f`)
+- **Official Build 8.8 IPA** (Stable Low-RAM & 120 FPS Release): [Muguet-v8.8.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.8-20261012) (SHA-256: `ffec5e5076842cb2a096aa0dc886b284cfee9e75e47e3d322223370e61f4bb46`)
 - **Build 8.7 IPA**: [Muguet-v8.7.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.7-20261012) (SHA-256: `b5d70b6144145d8a2b676ce6a0f5e48bc868056dfc1aa31c0b9b4b2bbcbecd4f`)
 - **Release Mirror**: [iOSVNNews/muguet-ios-build](https://github.com/iOSVNNews/muguet-ios-build/releases)
 
