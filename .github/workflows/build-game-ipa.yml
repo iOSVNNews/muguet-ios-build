@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: iOSVNNews/muguet
-          ref: 0d43ef30746dc8c5076a6d509635b515f185bb40
+          ref: main
           path: source
 
       - name: Set up Xcode and Rust
