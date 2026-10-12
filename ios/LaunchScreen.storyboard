@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23501" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" launchScreen="YES" initialViewController="launch-controller">
+    <device id="retina6_12" orientation="landscape" appearance="dark"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23501"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="launch-scene">
+            <objects>
+                <viewController id="launch-controller" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="launch-view">
+                        <rect key="frame" x="0.0" y="0.0" width="852" height="393"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Muguet" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="launch-title">
+                                <rect key="frame" x="276" y="124" width="300" height="52"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="42"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="proudly made by c22dev" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="launch-author">
+                                <rect key="frame" x="276" y="190" width="300" height="20"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <color key="textColor" white="0.72" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Rebuild: iOSVN" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="launch-rebuild">
+                                <rect key="frame" x="276" y="220" width="300" height="20"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <color key="textColor" red="0.59" green="0.75" blue="0.84" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="launch-safe"/>
+                        <color key="backgroundColor" red="0.045" green="0.065" blue="0.085" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="launch-title" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="title-x"/>
+                            <constraint firstItem="launch-title" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="-46" id="title-y"/>
+                            <constraint firstItem="launch-title" firstAttribute="width" constant="300" id="title-w"/>
+                            <constraint firstItem="launch-title" firstAttribute="height" constant="52" id="title-h"/>
+                            <constraint firstItem="launch-author" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="author-x"/>
+                            <constraint firstItem="launch-author" firstAttribute="top" secondItem="launch-title" secondAttribute="bottom" constant="14" id="author-y"/>
+                            <constraint firstItem="launch-author" firstAttribute="width" constant="300" id="author-w"/>
+                            <constraint firstItem="launch-author" firstAttribute="height" constant="20" id="author-h"/>
+                            <constraint firstItem="launch-rebuild" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="rebuild-x"/>
+                            <constraint firstItem="launch-rebuild" firstAttribute="top" secondItem="launch-author" secondAttribute="bottom" constant="10" id="rebuild-y"/>
+                            <constraint firstItem="launch-rebuild" firstAttribute="width" constant="300" id="rebuild-w"/>
+                            <constraint firstItem="launch-rebuild" firstAttribute="height" constant="20" id="rebuild-h"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="launch-responder" sceneMemberID="firstResponder"/>
+            </objects>
+        </scene>
+    </scenes>
+</document>

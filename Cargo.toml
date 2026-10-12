@@ -1,0 +1,36 @@
+# muguet - Cargo.toml
+# Constantin Clerc (c22dev) - 0.1
+
+[package]
+name = "muguet"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+wasmtime = { version = "49", default-features = false, features = ["runtime", "threads", "profiling", "anyhow"] }
+anyhow = "1"
+serde_json = "1.0.151"
+wgpu = "30.0.1"
+pollster = "1.0.1"
+regex = "1.13.1"
+winit = "0.30.13"
+cpal = "0.18.2"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSString"] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFCGTypes"] }
+objc2-game-controller = { version = "0.3", default-features = false, features = ["std", "GCController", "GCExtendedGamepad", "GCPhysicalInputProfile", "GCControllerElement", "GCControllerAxisInput", "GCControllerButtonInput", "GCControllerDirectionPad"] }
+wasmparser = { version = "0.258.3", optional = true }
+wasm-encoder = { version = "0.258.3", optional = true, features = ["wasmparser"] }
+bcdec_rs = "0.2.0"
+
+[features]
+default = ["jit"]
+jit = ["wasmtime/cranelift", "wasmtime/parallel-compilation", "dep:wasmparser", "dep:wasm-encoder"]
+
+[profile.release]
+opt-level = 2
+
+[patch.crates-io]
+wgpu-core = { path = "vendor/wgpu-core" }
