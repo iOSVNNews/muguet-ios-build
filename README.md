@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20macOS-lightgrey.svg)](https://github.com/iOSVNNews/muguet)
 [![Architecture](https://img.shields.io/badge/Arch-ARM64%20Mach--O-orange.svg)](https://github.com/iOSVNNews/muguet)
-[![Latest Release](https://img.shields.io/badge/Release-Build%208.7%20Beta-brightgreen.svg)](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.7-beta-20261012)
+[![Latest Release](https://img.shields.io/badge/Release-Build%208.8-brightgreen.svg)](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.8-20261012)
 
 An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, and macOS. Powered by WebAssembly ahead-of-time (AOT) compilation and Apple Metal graphics.
 
@@ -78,8 +78,8 @@ An open-source native Mach-O ARM64 port of Grand Theft Auto V for iOS, iPadOS, a
 
 Precompiled IPA binaries are available on the [Releases page](https://github.com/iOSVNNews/muguet/releases):
 
-- **Latest Build 8.7 Beta IPA** (Stability & Low-RAM Patch): [Muguet-v8.7-beta.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.7-beta-20261012)
-- **Stable Build 8.7 IPA**: [Muguet-v8.7.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.7-20261012) (SHA-256: `b5d70b6144145d8a2b676ce6a0f5e48bc868056dfc1aa31c0b9b4b2bbcbecd4f`)
+- **Latest Official Build 8.8 IPA** (Stability & Low-RAM Release): [Muguet-v8.8.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.8-20261012) (SHA-256: `ffec5e5076842cb2a096aa0dc886b284cfee9e75e47e3d322223370e61f4bb46`)
+- **Build 8.7 IPA**: [Muguet-v8.7.ipa](https://github.com/iOSVNNews/muguet/releases/tag/iosvn-runtime8.7-20261012) (SHA-256: `b5d70b6144145d8a2b676ce6a0f5e48bc868056dfc1aa31c0b9b4b2bbcbecd4f`)
 - **Release Mirror**: [iOSVNNews/muguet-ios-build](https://github.com/iOSVNNews/muguet-ios-build/releases)
 
 ### Sideloading Methods
